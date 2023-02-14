@@ -1,0 +1,464 @@
+---
+title: "Learning R"
+author: "Claire Volk"
+date: "2023-02-05"
+output: html_document
+PLOTTING
+
+https://umcarpentries.org/intro-curriculum-r/01-r-plotting/index.html
+
+Questions
+What are R and R Studio?
+
+How do I read data into R?
+
+What are geometries and aesthetics?
+
+How can I use R to create and save professional data visualizations?
+
+Objectives
+To become oriented with R and R Studio.
+
+To be able to read in data from csv files.
+
+To create plots with both discrete and continuous variables.
+
+To understand mapping and layering using ggplot2.
+
+To be able to modify a plot’s color, theme, and axis labels.
+
+To be able to save plots to a local directory.
+
+ggplot cheat sheet:  https://ggplot2.tidyverse.org/
+
+---
+
+```{r setup, include=FALSE}
+#load in necessary functions for analysis
+knitr::opts_chunk$set(echo = TRUE)
+library (tidyverse)
+```
+For functions that need multiple arguments, separate the arguments by commas.
+```{r}
+#Exploring R commands
+sum(5,6)
+#When running things in the regular R (not R markdown)
+  #command, shift, return to run all the lines in the console
+  #command return to run the current line in the console
+
+Sys.Date()
+getwd()
+?round
+round(x=3.1415)
+round(x=3.1415, digits = 2)
+round(digits = 2, x = 3.1415)
+round(2, 3.1415)
+
+```
+Using the pipe operator %>% and enter command makes our code more readable. The pipe operator %>% also helps to avoid using nested function and minimizes the need for new variables.
+
+Since we use the pipe operator so often, there is a keyboard shortcut for it in RStudio. You can press Ctrl+Shift+M on Windows or Cmd+Shift+M on a Mac.
+```{r}
+#Load in Data
+gapminder_1997 <- read_csv("gapminder_1997.csv")
+ #View(gapminder_1997)
+```
+```{r}
+
+ggplot(data = gapminder_1997) +
+  aes (x=gdpPercap, y=lifeExp, color = continent, size = pop/1000000) +
+  labs(x = "GDP Per Capita", y= "Life Expectancy", title = "Do people in wealthy countries live longer?", size = "Population (in millions)") +
+  #adds the points to the plot
+  geom_point() + 
+  #changes the color used in the points
+  scale_color_brewer(palette = "Set1")+
+  #changes the background of the plot
+  theme_bw()
+```
+Things that are in quotes are a character string
+Things that are not in quotes are an object in a dataframe or a variable 
+
+
+```{r} 
+#Load in the Data
+gapminder <- read_csv(file = "gapminder_data.csv") 
+
+#Plot time (x-axis) and life expectancy (y axis)
+
+ggplot(data = gapminder) + 
+  aes(x = year, y = lifeExp, color = continent, group = country) + 
+  labs(x = "Time", y = "Life Expectancy (yrs)")+
+  geom_line() + 
+  theme_linedraw()
+
+```
+Now create your own line plot comparing population and life expectancy! Looking at your plot, can you guess which two countries have experienced massive change in population from 1952-2007?
+```{r}
+popvlifeexp <- ggplot(data=gapminder)+
+  aes(x=pop/1000000, y=lifeExp, group = country, color = continent) + 
+  labs(x = "Population (in millions)", y = "Life Expectancy (yrs)") +
+ # scale_x_continuous(trans = 'log') + 
+  theme_bw()+
+  geom_line()
+popvlifeexp
+```
+Using the gapminder_1997 data, use ggplot to create a box plot with continent on the x axis and life expectancy on the y axis. You can use the examples from earlier in the lesson as a template to remember how to pass ggplot data and map aesthetics and geometries onto the plot. If you’re really stuck, feel free to use the internet as well!
+```{r}
+#Create a box plot with continent on the x axis and life expectancy on the y axis.  
+violin_plot_1 <- ggplot(data = gapminder_1997) + 
+  aes(x=continent, y=lifeExp, color = continent) + 
+  labs(x= "Continent", y="Life Expectancy (yrs)") + 
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(alpha = 0.2)
+
+ggsave("violin_plot_1.pdf", plot = violin_plot_1)
+```
+```{r}
+ggplot(data = gapminder_1997) + 
+  aes(x=continent, y=lifeExp) + 
+  labs(x= "Continent", y="Life Expectancy (yrs)") + 
+  geom_violin(aes(fill = continent), alpha = .5) +
+  geom_jitter(aes(size = pop, color = continent))
+ 
+ 
+```
+
+
+
+
+```{r}
+ #if you run this code, you get the wrong colors
+ggplot(data = gapminder_1997) +
+ aes(x = continent, y = lifeExp) +
+ geom_violin(aes(fill = "springgreen"))
+#you have to remove the aes function because that's trying to make springgreen a category
+ggplot(data = gapminder_1997) +
+ aes(x = continent, y = lifeExp) +
+ geom_violin(fill = "springgreen")
+```
+```{r}
+#the last line of the first 2 ggplots specify 2 different ways that you can rotate the x axis labels 
+ggplot(gapminder_1997) + 
+  aes(x=lifeExp) + 
+  geom_histogram(bins=20)+
+  theme_linedraw() +
+  scale_x_continuous(guide = guide_axis(angle = 90))
+
+ggplot(gapminder_1997) + 
+  aes(x=lifeExp) + 
+  geom_histogram(bins=5)+
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(gapminder_1997) + 
+  aes(x=lifeExp) + 
+  geom_histogram(bins=50)+
+  theme_bw()
+```
+```{r}
+ggplot(data=gapminder_1997) +
+  aes(x=continent)+
+  geom_bar() +
+  theme_classic()
+```
+If you have a lot of different columns to try to plot or have distinguishable subgroups in your data, a powerful plotting technique called faceting might come in handy. When you facet your plot, you basically make a bunch of smaller plots and combine them together into a single image. 
+
+Note that facet_wrap requires this extra helper function called vars() in order to pass in the column names. It’s a lot like the aes() function, but it doesn’t require an aesthetic name. We can see in this output that we get a separate box with a label for each continent so that only the points for that continent are in that box.
+
+The other faceting function ggplot provides is facet_grid(). The main difference is that facet_grid() will make sure all of your smaller boxes share a common axis. In this example, we will stack all the boxes on top of each other into rows so that their x axes all line up.
+```{r}
+ggplot(data = gapminder_1997) + 
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point() + 
+  facet_wrap(vars(continent))
+
+ggplot(data = gapminder_1997) + 
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point() + 
+  facet_grid(rows = vars(continent))
+```
+A better option if you will be running your code as a script from the command line or just need your code to be more reproducible is to use the ggsave() function. When you call this function, it will write the last plot printed to a file in your local directory. It will determine the file type based on the name you provide. So if you call ggsave("plot.png") you’ll get a PNG file or if you call ggsave("plot.pdf") you’ll get a PDF file. By default the size will match the size of the Plots tab. To change that you can also supply width= and height= arguments. By default these values are interpreted as inches. So if you want a wide 4x6 image you could do something like:
+
+```{r}
+library(gganimate)
+library(gifski)
+
+staticHansPlot <- ggplot (data = gapminder) + 
+  aes(x = log(gdpPercap), y = lifeExp, size = pop/1000000, color = continent) + 
+  labs(x = "GDP per Capita", y = "Life Expectancy (yrs)", size = "Population (millions", color = "Continent") + 
+  geom_point(alpha = 0.5) + 
+  theme_classic()
+staticHansPlot
+```
+Making an animated plot: 
+The first argument of the transition_states() function tells ggplot() which variable should be different in each frame of our animation: in this case, we want each frame to be a different year.
+The transition_length and state_length arguments are just some of the gganimate arguments you can use to adjust how the animation progresses from one frame to the next. Feel free to play around with those parameters, to see how they affect the animation (or check out more gganmiate options here!).
+Finally, we want the title of our plot to tell us which year our animation is currently showing. Using “{closest_state}” as our title allows the title of our plot to show which year is currently being plotted.
+So we’ve made this cool animated plot - how do we save it? For gganimate objects, we can use the anim_save() function. It works just like ggsave(), but for animated objects.
+```{r}
+#animatedHansPlot <- staticHansPlot + 
+  #transition_states(year, transition_length = 1, state_length = 1) +
+  #ggtitle("{closest_state}")
+#animatedHansPlot
+
+#anim_save("hansAnimatedPlot.gif",
+          #plot = animatedHansPlot,
+          #renderer = gifski_renderer())
+```
+
+```{r}
+# make sure names of countries match between the map info and the data
+# NOTE: we haven't learned how to modify the data in this way yet, but we'll learn about that in the next lesson. Just take for granted that it works for now :)
+#install.packages(c("maps", "mapproj"))
+
+
+mapdata <- map_data("world") %>%
+  mutate(region = recode(region,
+                         USA="United States",
+                         UK="United Kingdom"))
+
+gapminder_1997 %>% ggplot()+
+  geom_map(aes(map_id=country, fill=lifeExp), map=mapdata) + 
+  expand_limits(x=mapdata$long, y= mapdata$lat) +
+  coord_map(projection = "mollweide", xlim = c(-180, 180)) + 
+  ggthemes::theme_map()
+```
+
+DATA ANALYSIS
+https://umcarpentries.org/intro-curriculum-r/04-r-data-analysis/index.html
+Questions
+How can I summarize my data in R?
+
+How can R help make my research more reproducible?
+
+How can I combine two datasets from different sources?
+
+How can data tidying facilitate answering analysis questions?
+
+Objectives
+To become familiar with the functions of the dplyr and tidyr packages.
+
+To be able to use dplyr and tidyr to prepare data for analysis.
+
+To be able to combine two different data sources using joins.
+
+To be able to create plots and summary tables to answer analysis questions.
+
+It’s worth exploring logical operators for “or” |, “and” &&, and “not” !, which opens up a great deal of possibilities for writing code to do what you want.
+
+When we call summarize(), we can use any of the column names of our data object as values to pass to other functions. summarize() will return a new data object and our value will be returned as a column.
+
+You can also create more than one new column when you call summarize(). To do so, you must separate your columns with a comma. 
+
+Each time we run summarize(), we get back fewer rows than passed in.
+```{r - Using summarise function to calculate things with columns in the table}
+summarise(gapminder_1997, averageLifeExp = mean(lifeExp))
+
+#using the pipe operator to accomplish the same thing
+gapminder %>% 
+  summarise(averageLifeExp = mean(lifeExp))
+
+#averageLifeExp is not actually a new dataframe
+
+mostrecentyear <- gapminder %>% 
+  summarise(max (year))
+```
+Filter allows you to extract certain rows based on one or more column fitting a certain conditions. 
+
+filter(variable == value) is to make the variable equal a value
+filter (variable <- value) is to make the variable less than or equal to the value
+fitler variable >- value) is to make the variable greater than or equal to the value
+
+IF WE WANT TO FILTER BASED ON 2+ VALUES FOR A VARIABLE, HOW DO WE TELL IT TO FILTER FOR BOTH VALUES - for example, say you want to filter both Americas and Europe
+
+pass your dataframe object to the filter function, then in the condition parameter write the column name in which you want to filter multiple values then put the %in% operator, and then pass a vector containing all the string values which you want in the result.
+
+  e.g. filter (gapminder, continent %in% c("Americas", "Europe"))
+  
+  You can also use the "or" which looks like this |
+  
+  so continent = Americas | Europe (I think)
+```{r Using Filter}
+avlifeexp2007 <- gapminder %>% 
+  filter(year == 2007) %>%
+  summarize(mean = mean(lifeExp))
+avlifeexp2007
+```
+```{r find the first year}
+summarise(gapminder, min(year))
+
+```
+```{r average GDP per capita in the first year}
+gapminder %>% 
+  filter (year == 1952) %>% 
+  summarise(mean(gdpPercap))
+
+```
+group_by() function: The function allows us to tell the code to treat the rows in logical groups, so rather than summarizing over all the rows, we will get one summary value for each group. 
+
+The group_by() function expects you to pass in the name of a column (or multiple columns separated by comma) in your data.
+```{r find the average life expectancy for each year}
+gapminder %>% 
+  group_by(year) %>% 
+  summarise(mean(lifeExp))
+
+```
+```{r Life Expectance By Continent}
+gapminder %>% 
+  group_by(continent) %>% 
+  summarise(mean = mean(lifeExp), min = min(lifeExp))
+```
+To create a new column in our data without changing the number of rows, the function we use  is called mutate().
+
+We use the column names as if they were regular values that we want to perform mathematical operations on.
+
+To name the new column, provide the name in front of an equals sign.
+
+```{r Mutate}
+gapminder %>% 
+  mutate(gdp = pop * gdpPercap)
+```
+```{r Add a column that expresses the population in millions}
+
+gapminder %>% 
+  mutate(popInMillions = pop/1000000)
+
+```
+When we want to choose a subset of columns from our data we use select()
+
+We can also use select() to drop/remove particular columns by putting a minus sign (-) in front of the column name.
+
+: for selecting a range of consecutive variables.
+
+! for taking the complement of a set of variables.
+
+& and | for selecting the intersection or the union of two sets of variables.
+
+c() for combining selections.
+
+everything(): Matches all variables.
+
+last_col(): Select last variable, possibly with an offset.
+
+starts_with(): Starts with a prefix.
+
+ends_with(): Ends with a suffix.
+
+contains(): Contains a literal string.
+
+matches(): Matches a regular expression.
+
+num_range(): Matches a numerical range like x01, x02, x03.
+
+all_of(): Matches variable names in a character vector. All names must be present, otherwise an out-of-bounds error is thrown.
+
+any_of(): Same as all_of(), except that no error is thrown for names that don't exist.
+
+where(): Applies a function to all variables and selects those for which the function returns TRUE.
+
+```{r}
+#include only the pop and the year
+gapminder %>% 
+  select(pop, year)
+
+#include everything but the continent
+gapminder %>% 
+  select(-continent)
+
+#dataframe with only the country, continent, year, and lifeExp columns
+gapminder %>% 
+  select (country, continent, year, lifeExp)
+```
+Data that is “long” has one row per observation. Typically in “wide” format each row represents a group of observations and each value is placed in a different column rather than a different row. 
+
+The tidyr package contains the functions pivot_wider and pivot_longer that make it easy to switch between the two formats. 
+
+```{r}
+gapminder %>%
+  select(country, continent, year, lifeExp) %>%
+  pivot_wider(names_from = year, values_from = lifeExp )
+
+```
+```{r Make a Dataset that has data from the Americas in 2007}
+
+gapminder_2007_Americas <- gapminder %>% 
+  filter(year == 2007, continent == "Americas") %>% 
+  select(-year, -continent) %>% 
+  mutate(country = recode(country, "Puerto Rico" = "United States")) %>% 
+  group_by(country) %>% 
+  summarise(lifeExp = sum(lifeExp*pop)/sum(pop), gdpPercap = sum(gdpPercap*pop)/sum(pop), pop = sum(pop))
+  
+gapminder_2007_Americas
+```
+NOT ABLE TO FIGURE OUT THE "Reviewing Git and GitHub"
+
+We can do this using the skip= argument in read_csv by giving it a number of lines to skip. We also want to specify the column names.  You can do this using col_names or by using the rename function.  Many data analysts prefer to have their column headings and variable names be in all lower case. We can use a variation of rename(), which is rename_all() that allows us to set all of the column headings to lower case by giving it the name of the tolower function, which makes everything lowercase.
+```{r}
+co2_emissions_dirty <- read_csv("co2-un-data.csv", skip = 2, col_names = c("region", "country", "year", "series", "value", "footnotes", "source")) %>% 
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total_emissions",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita_emissions")) %>% 
+  pivot_wider(names_from = series, values_from = value) %>% 
+  filter(year == 2005) %>% 
+  select(-year) %>% 
+  mutate(country = recode(country, 
+                          "Bolivia (Plurin. State of)" = "Bolivia", 
+                          "Venezuela (Boliv. Rep. of)" = "Venezuela",
+                          "United States of America" = "United States"))
+
+co2_emissions_dirty
+```
+recode function. We need to do this within the mutate function where we will mutate the series column. The syntax in the recode function is to tell recode which column we want to recode and then what the old value (e.g. “Emissions (thousand metric tons of carbon dioxide)”) should equal after recoding (e.g. “total”).
+
+One useful tool is the count() function, which will tell us how many times a value is repeated in a column of a data frame. 
+
+The dplyr package has a number of tools for joining data frames together depending on what we want to do with the rows of the data of countries that are not represented in both data frames. Here we’ll be using inner_join() and anti_join().
+
+In an “inner join”, the new data frame only has those rows where the same key is found in both data frames. This is a very commonly used join.
+
+
+```{r}
+gapminder_co2 <- inner_join(gapminder_2007_Americas, co2_emissions_dirty, by ="country") %>% 
+  mutate(region = if_else(country == "Canada" | country == "United States" | country == "Mexico", "north", "south"))
+gapminder_co2
+
+anti_join(gapminder_2007_Americas,co2_emissions_dirty, by = "country")  
+
+write_csv(gapminder_co2, "gapminder_co2.csv")
+```
+Tip: Notice we used the \n in our title to get a new line to prevent it from getting cut off.
+```{r}
+ggplot(gapminder_co2) + 
+  aes(x = gdpPercap, y = per_capita_emissions) + 
+  geom_point() + 
+  labs (x = "GDP per Capita", y = "CO2 Emissions per Capita", title = "There is a strong association between a nation's GDP \nand the amount of CO2 it produces") +
+  geom_smooth(method = "lm")
+```
+```{r}
+Am_regional_emissions <- gapminder_co2 %>% 
+  group_by(region) %>% 
+  summarise (sumtotal = sum(total_emissions),
+             sumpop = sum(pop)) 
+colnames(Am_regional_emissions) <- c("region", "total_emissions", "total_population")
+
+Am_regional_emissions %>% 
+  mutate(percentage_emissions = total_emissions/sum(total_emissions)*100, percentage_pop = total_population/sum(total_population)*100)
+  
+Am_regional_emissions 
+```
+The arrange() function allows us to sort our data by some value. Let’s use the gapminder_data dataframe. We will take the average value for each continent in 2007 and then sort it so the continents with the longest life expectancy are on top. Which continent might you guess has be highest life expectancy before running the code?
+
+The helper function ends_with() can help us here. 
+
+Notice there that we can use the column created the in the summarize() step (“average”) later in the arrange() step. We also use the desc() function here to sort the values in a descending order so the largest values are on top. The default is to put the smallest values on top.
+```{r}
+gapminder %>%
+ filter(year==2007) %>%
+ group_by(continent) %>%
+ summarise(average= mean(lifeExp)) %>%
+ arrange(desc(average))
+```
+```{r}
+
+```
+
