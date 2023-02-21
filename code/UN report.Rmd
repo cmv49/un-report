@@ -1,0 +1,14 @@
+---
+title: "UN report"
+author: "Claire Volk"
+date: "2023-02-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+In the curly brackets, you can name the chunk. For instance, the first code block is named “setup”, and include=FALSE prevents code and results from showing up in the output file.
+
+
+
