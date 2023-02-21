@@ -9,4 +9,4 @@ File Structure:
 -code folder includes R scripts
 -data includes csv files for analysis
 -figures have the output for the analysis
-
+-reports contains the Rmd files
